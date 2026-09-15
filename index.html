@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <!-- 鎖定畫面大小，防止雙擊放大與縮放 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>大海的學測英文單字庫</title>
+
+    <!-- 加入主畫面設定與原圖圖標 -->
+    <meta name="apple-mobile-web-app-title" content="大海的學測英文單字庫">
+    <meta name="application-name" content="大海的學測英文單字庫">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="apple-touch-icon" href="icon_English.png">
+
+    <!-- 網頁分頁標籤圖標 (初始預設，稍後 JS 會自動轉換成圓形) -->
+    <link rel="icon" id="dynamic-favicon" type="image/png" href="icon_English.png">
+
+    <!-- 離線與 PWA Web App 清單 -->
+    <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22%E5%A4%A7%E6%B5%B7%E7%9A%84%E5%AD%B8%E6%88%90%E8%8B%B1%E6%96%87%E5%96%AE%E5%AD%97%E5%BA%AB%22%2C%22short_name%22%3A%22%E5%A4%A7%E6%B5%B7%E7%9A%84%E5%AD%B8%E6%88%90%E8%8B%B1%E6%96%87%E5%96%AE%E5%AD%97%E5%BA%AB%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f4f6f9%22%2C%22theme_color%22%3A%22%233498db%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22icon_English.png%22%2C%22sizes%22%3A%22192x192%20512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
+
+    <!-- 引入 html2pdf.js 用於產生 PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            touch-action: pan-x pan-y;
+            -webkit-touch-callout: none;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            padding: 30px 16px;
+        }
+        .container {
+            width: 100%;
+            max-width: 720px;
+            background: #ffffff;
+            padding: 28px;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        .sync-status {
+            text-align: center;
+            font-size: 13px;
+            color: #7f8c8d;
+            margin-bottom: 16px;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .input-group input, .input-group select {
+            padding: 10px;
+            font-size: 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            outline: none;
+        }
+        #wordInput { flex: 2; min-width: 140px; }
+        #posSelect { flex: 1; min-width: 100px; }
+        #defInput { flex: 3; min-width: 180px; }
+
+        .btn {
+            padding: 10px 16px;
+            font-size: 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+        .btn-primary { background-color: #3498db; color: #fff; }
+        .btn-primary:hover { background-color: #2980b9; }
+        .btn-secondary { background-color: #6c757d; color: #fff; }
+        .btn-secondary:hover { background-color: #5a6268; }
+        .btn-success { background-color: #2ecc71; color: #fff; }
+        .btn-success:hover { background-color: #27ae60; }
+
+        .action-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        /* 編輯清單樣式 */
+        .word-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .word-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 10px 14px;
+            border-radius: 6px;
+            cursor: grab;
+            user-select: none;
+        }
+        .word-item.dragging {
+            opacity: 0.4;
+            background-color: #e3f2fd;
+        }
+        .drag-handle {
+            color: #aaa;
+            margin-right: 12px;
+            cursor: grab;
+        }
+        .word-content {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            flex: 1;
+        }
+        .word-text { font-size: 16px; font-weight: 600; color: #2c3e50; }
+        .part-of-speech { font-size: 13px; color: #7f8c8d; font-style: italic; }
+        .definition { font-size: 14px; color: #34495e; }
+
+        .delete-btn {
+            background-color: transparent;
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .delete-btn:hover { background-color: #e74c3c; color: #fff; }
+
+        /* 預覽與列印區塊 */
+        #previewModal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            z-index: 1000;
+        }
+        .modal-card {
+            background: #fff;
+            width: 100%;
+            max-width: 650px;
+            max-height: 90vh;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .modal-footer {
+            padding: 12px 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* PDF 列印區域樣式 */
+        .pdf-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .pdf-table th, .pdf-table td {
+            border: 1px solid #ddd;
+            padding: 10px 12px;
+            text-align: left;
+        }
+        .pdf-table th {
+            background-color: #f4f6f9;
+            font-weight: 600;
+        }
+        .empty-tip {
+            text-align: center;
+            color: #999;
+            padding: 20px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>大海的學測英文單字庫</h1>
+    <div class="sync-status" id="syncStatus">雲端狀態：連線中...</div>
+
+    <!-- 輸入區 -->
+    <div class="input-group">
+        <input type="text" id="wordInput" placeholder="英文單字 (例: Apple)">
+        <select id="posSelect">
+            <option value="n.">n. 名詞</option>
+            <option value="v.">v. 動詞</option>
+            <option value="adj.">adj. 形容詞</option>
+            <option value="adv.">adv. 副詞</option>
+            <option value="prep.">prep. 介系詞</option>
+            <option value="conj.">conj. 連接詞</option>
+            <option value="phr.">phr. 片語</option>
+        </select>
+        <input type="text" id="defInput" placeholder="中文解釋 (例: 蘋果)">
+        <button class="btn btn-primary" onclick="addWord()">新增</button>
+    </div>
+
+    <!-- 工具按鈕列 -->
+    <div class="action-bar">
+        <button class="btn btn-secondary" onclick="autoGroupAndSort()">自動排列 (相近詞與字母)</button>
+        <button class="btn btn-success" onclick="openPreview()">預覽輸出</button>
+    </div>
+
+    <!-- 可拖曳單字清單 -->
+    <ul class="word-list" id="wordList"></ul>
+</div>
+
+<!-- 預覽與輸出彈窗 -->
+<div id="previewModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>預覽清單（唯讀模式）</h2>
+        </div>
+        <div class="modal-body" id="pdfPrintArea">
+            <h3 style="text-align: center; margin-bottom: 15px;">大海的學測英文單字庫</h3>
+            <table class="pdf-table">
+                <thead>
+                    <tr>
+                        <th style="width: 10%;">#</th>
+                        <th style="width: 35%;">單字</th>
+                        <th style="width: 15%;">詞性</th>
+                        <th style="width: 40%;">解釋</th>
+                    </tr>
+                </thead>
+                <tbody id="previewTableBody"></tbody>
+            </table>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closePreview()">返回編輯</button>
+            <button class="btn btn-success" onclick="exportPDF()">輸出 PDF</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Firebase Realtime Database 端點
+    const DB_URL = "https://english-tahai-default-rtdb.asia-southeast1.firebasedatabase.app/words.json";
+
+    /* 1. 自動將 Favicon 轉化為圓形 */
+    function setCircularFavicon(imageUrl) {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.src = imageUrl;
+        img.onload = () => {
+            const canvas = document.createElement("canvas");
+            const size = 64;
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext("2d");
+
+            ctx.beginPath();
+            ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.clip();
+            ctx.drawImage(img, 0, 0, size, size);
+
+            const dynamicFavicon = document.getElementById("dynamic-favicon");
+            if (dynamicFavicon) {
+                dynamicFavicon.href = canvas.toDataURL("image/png");
+            }
+        };
+    }
+    setCircularFavicon("icon_English.png");
+
+    /* 2. 阻擋行動裝置雙擊放大 */
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function (event) {
+        const now = Date.now();
+        if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, false);
+
+    /* 3. 註冊離線快取 Service Worker */
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            const swCode = `
+                const CACHE_NAME = 'vocab-cache-v2';
+                const ASSETS = [
+                    './',
+                    './index.html',
+                    './icon_English.png',
+                    'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'
+                ];
+                self.addEventListener('install', (e) => {
+                    e.waitUntil(
+                        caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting())
+                    );
+                });
+                self.addEventListener('activate', (e) => {
+                    e.waitUntil(
+                        caches.keys().then((keys) => {
+                            return Promise.all(keys.map((k) => { if (k !== CACHE_NAME) return caches.delete(k); }));
+                        }).then(() => self.clients.claim())
+                    );
+                });
+                self.addEventListener('fetch', (e) => {
+                    // Firebase 即時請求走網路，靜態檔案走快取
+                    if (e.request.url.includes('firebasedatabase.app')) {
+                        e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+                    } else {
+                        e.respondWith(caches.match(e.request).then((res) => res || fetch(e.request)));
+                    }
+                });
+            `;
+            const blob = new Blob([swCode], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+            navigator.serviceWorker.register(swUrl).catch((err) => {
+                console.log('SW registration note:', err);
+            });
+        });
+    }
+
+    /* 4. 資料存取與 Firebase 即時同步機制 */
+    let words = JSON.parse(localStorage.getItem("vocabularyList")) || [];
+
+    function updateStatus(text, isError = false) {
+        const status = document.getElementById("syncStatus");
+        status.textContent = text;
+        status.style.color = isError ? "#e74c3c" : "#7f8c8d";
+    }
+
+    // 儲存至本地及雲端 Firebase
+    async function saveStorage() {
+        localStorage.setItem("vocabularyList", JSON.stringify(words));
+        updateStatus("正在同步至雲端...");
+        try {
+            const res = await fetch(DB_URL, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(words)
+            });
+            if (res.ok) {
+                updateStatus("雲端狀態：已同步完成");
+            } else {
+                updateStatus("雲端狀態：同步失敗（請檢查 Firebase 權限規則）", true);
+            }
+        } catch (err) {
+            updateStatus("雲端狀態：離線模式（已暫存本機）");
+        }
+    }
+
+    // 首次載入自 Firebase 取得資料
+    async function loadFromFirebase() {
+        updateStatus("雲端狀態：正在從雲端載入資料...");
+        try {
+            const res = await fetch(DB_URL);
+            if (res.ok) {
+                const data = await res.json();
+                if (Array.isArray(data)) {
+                    words = data;
+                } else if (data && typeof data === 'object') {
+                    words = Object.values(data);
+                } else if (data === null) {
+                    words = JSON.parse(localStorage.getItem("vocabularyList")) || [];
+                }
+                localStorage.setItem("vocabularyList", JSON.stringify(words));
+                updateStatus("雲端狀態：已連線並同步最新資料");
+                renderList();
+            } else {
+                updateStatus("雲端狀態：讀取失敗，使用本機暫存資料", true);
+            }
+        } catch (err) {
+            updateStatus("雲端狀態：離線模式，使用本機暫存資料");
+        }
+    }
+
+    function addWord() {
+        const wordInput = document.getElementById("wordInput");
+        const posSelect = document.getElementById("posSelect");
+        const defInput = document.getElementById("defInput");
+
+        const word = wordInput.value.trim();
+        const pos = posSelect.value;
+        const def = defInput.value.trim();
+
+        if (!word || !def) {
+            alert("請填寫單字與中文解釋！");
+            return;
+        }
+
+        words.push({ word, pos, def });
+        saveStorage();
+        renderList();
+
+        wordInput.value = "";
+        defInput.value = "";
+        wordInput.focus();
+    }
+
+    function deleteWord(index) {
+        words.splice(index, 1);
+        saveStorage();
+        renderList();
+    }
+
+    function autoGroupAndSort() {
+        words.sort((a, b) => {
+            const wordA = a.word.toLowerCase();
+            const wordB = b.word.toLowerCase();
+
+            const prefixLen = 3;
+            const prefixA = wordA.slice(0, prefixLen);
+            const prefixB = wordB.slice(0, prefixLen);
+
+            if (prefixA === prefixB) {
+                return wordA.localeCompare(wordB);
+            }
+            return wordA.localeCompare(wordB);
+        });
+
+        saveStorage();
+        renderList();
+    }
+
+    function renderList() {
+        const listElement = document.getElementById("wordList");
+        listElement.innerHTML = "";
+
+        if (words.length === 0) {
+            listElement.innerHTML = '<li class="empty-tip">目前尚無單字，請新增或排序。</li>';
+            return;
+        }
+
+        words.forEach((item, index) => {
+            const li = document.createElement("li");
+            li.className = "word-item";
+            li.draggable = true;
+            li.dataset.index = index;
+
+            li.innerHTML = `
+                <div class="word-content">
+                    <span class="drag-handle">☰</span>
+                    <span class="word-text">${item.word}</span>
+                    <span class="part-of-speech">${item.pos}</span>
+                    <span class="definition">${item.def}</span>
+                </div>
+                <button class="delete-btn" onclick="deleteWord(${index})">刪除</button>
+            `;
+
+            li.addEventListener("dragstart", handleDragStart);
+            li.addEventListener("dragover", handleDragOver);
+            li.addEventListener("drop", handleDrop);
+            li.addEventListener("dragend", handleDragEnd);
+
+            listElement.appendChild(li);
+        });
+    }
+
+    let draggedItemIndex = null;
+
+    function handleDragStart(e) {
+        draggedItemIndex = Number(this.dataset.index);
+        this.classList.add("dragging");
+        e.dataTransfer.effectAllowed = "move";
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        const targetIndex = Number(this.dataset.index);
+        if (draggedItemIndex !== null && draggedItemIndex !== targetIndex) {
+            const movedItem = words.splice(draggedItemIndex, 1)[0];
+            words.splice(targetIndex, 0, movedItem);
+            saveStorage();
+            renderList();
+        }
+    }
+
+    function handleDragEnd() {
+        this.classList.remove("dragging");
+        draggedItemIndex = null;
+    }
+
+    function openPreview() {
+        const tbody = document.getElementById("previewTableBody");
+        tbody.innerHTML = "";
+
+        if (words.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">無單字資料</td></tr>';
+        } else {
+            words.forEach((item, idx) => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${idx + 1}</td>
+                    <td style="font-weight:600;">${item.word}</td>
+                    <td>${item.pos}</td>
+                    <td>${item.def}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        document.getElementById("previewModal").style.display = "flex";
+    }
+
+    function closePreview() {
+        document.getElementById("previewModal").style.display = "none";
+    }
+
+    function exportPDF() {
+        const element = document.getElementById("pdfPrintArea");
+        const opt = {
+            margin:       10,
+            filename:     '大海的學測英文單字庫.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+
+    // 初步繪製本地資料，並同時發起遠端同步
+    renderList();
+    loadFromFirebase();
+</script>
+
+</body>
+</html>
