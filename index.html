@@ -44,6 +44,74 @@
             min-height: 100vh;
         }
 
+        /* 登入遮罩 */
+        #loginOverlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: #f4f6f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: #ffffff;
+            width: 100%;
+            max-width: 380px;
+            padding: 32px 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .login-card h2 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+            font-size: 20px;
+        }
+
+        .login-card input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            text-align: center;
+            outline: none;
+        }
+
+        .login-card button {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+        }
+
+        .user-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #ebf5fb;
+            padding: 8px 14px;
+            border-radius: 6px;
+            margin-bottom: 14px;
+            font-size: 14px;
+            color: #2980b9;
+        }
+
+        .logout-btn {
+            background: none;
+            border: 1px solid #2980b9;
+            color: #2980b9;
+            padding: 2px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
         .container {
             width: 100%;
             max-width: 860px;
@@ -56,7 +124,7 @@
 
         h1 {
             text-align: center;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             color: #2c3e50;
             font-size: 24px;
             word-break: break-word;
@@ -123,6 +191,8 @@
         .btn-preview:hover { background-color: #27ae60; }
         .btn-export { background-color: #e67e22; color: #fff; }
         .btn-export:hover { background-color: #d35400; }
+        .btn-history { background-color: #8e44ad; color: #fff; }
+        .btn-history:hover { background-color: #732d91; }
         .btn-warning { background-color: #f39c12; color: #fff; }
         .btn-warning:hover { background-color: #d68910; }
         .btn-info { background-color: #1abc9c; color: #fff; }
@@ -248,7 +318,8 @@
         }
         .delete-btn:hover { background-color: #e74c3c; color: #fff; }
 
-        #conflictModal, #variantModal, #previewModal {
+        /* 彈窗樣式 */
+        #conflictModal, #variantModal, #previewModal, #historyModal {
             display: none;
             position: fixed;
             top: 0; left: 0;
@@ -269,6 +340,10 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+        }
+
+        .history-card {
+            max-width: 820px;
         }
 
         .modal-header {
@@ -318,6 +393,38 @@
             border-bottom: 1px dashed #eee;
         }
 
+        /* 歷史紀錄專用表格樣式 */
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .history-table th, .history-table td {
+            border: 1px solid #e0e0e0;
+            padding: 10px 8px;
+            text-align: left;
+            word-break: break-word;
+        }
+
+        .history-table th {
+            background-color: #f8fafc;
+            font-weight: 600;
+        }
+
+        .restore-btn {
+            background-color: #8e44ad;
+            color: #fff;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .restore-btn:hover { background-color: #732d91; }
+
         .pdf-group-title {
             font-size: 18px;
             font-weight: bold;
@@ -364,12 +471,26 @@
             .col-ops { width: 12%; }
             .word-table td { padding: 6px 6px; font-size: 13px; }
             .drag-bar { width: 28px; font-size: 14px; }
+            .history-table th, .history-table td { padding: 6px 4px; font-size: 12px; }
         }
     </style>
 </head>
 <body>
 
+<div id="loginOverlay">
+    <div class="login-card">
+        <h2>請輸入使用者名稱</h2>
+        <input type="text" id="usernameInput" placeholder="請輸入使用者名稱 (例如: 120105)" autofocus>
+        <button class="btn btn-primary" onclick="handleLogin()">登入</button>
+    </div>
+</div>
+
 <div class="container">
+    <div class="user-bar">
+        <span>目前使用者：<strong id="currentUsername"></strong></span>
+        <button class="logout-btn" onclick="handleLogout()">登出</button>
+    </div>
+
     <h1>大海的學測英文單字庫</h1>
     <div class="sync-status" id="syncStatus">雲端狀態：連線中...</div>
 
@@ -419,6 +540,7 @@
         <button class="btn btn-secondary" onclick="autoGroupAndSort()">重新自動排列</button>
         <button class="btn btn-preview" onclick="openPreview()">預覽輸出</button>
         <button class="btn btn-export" onclick="exportPDF()">輸出成 PDF</button>
+        <button class="btn btn-history" onclick="openHistory()">歷史紀錄</button>
     </div>
 
     <div id="groupedWordContainer"></div>
@@ -465,6 +587,20 @@
     </div>
 </div>
 
+<div id="historyModal">
+    <div class="modal-card history-card">
+        <div class="modal-header">
+            <h2>操作歷史紀錄</h2>
+        </div>
+        <div class="modal-body">
+            <div id="historyListContainer"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeHistory()">關閉</button>
+        </div>
+    </div>
+</div>
+
 <div id="previewModal">
     <div class="modal-card">
         <div class="modal-header">
@@ -484,6 +620,49 @@
 
 <script>
     const DB_URL = "https://english-tahai-default-rtdb.asia-southeast1.firebasedatabase.app/words.json";
+    const HISTORY_URL = "https://english-tahai-default-rtdb.asia-southeast1.firebasedatabase.app/history.json";
+
+    /* 使用者驗證 */
+    const ALLOWED_USERS = ["120105", "120110"];
+    let currentUser = localStorage.getItem("tahai_user") || "";
+
+    function checkAuth() {
+        if (ALLOWED_USERS.includes(currentUser)) {
+            document.getElementById("loginOverlay").style.display = "none";
+            document.getElementById("currentUsername").textContent = currentUser;
+        } else {
+            document.getElementById("loginOverlay").style.display = "flex";
+            document.getElementById("usernameInput").focus();
+        }
+    }
+
+    function handleLogin() {
+        const username = document.getElementById("usernameInput").value.trim();
+        if (ALLOWED_USERS.includes(username)) {
+            currentUser = username;
+            localStorage.setItem("tahai_user", currentUser);
+            document.getElementById("loginOverlay").style.display = "none";
+            document.getElementById("currentUsername").textContent = currentUser;
+        } else {
+            alert("使用者名稱錯誤，請重新輸入！");
+            document.getElementById("usernameInput").value = "";
+            document.getElementById("usernameInput").focus();
+        }
+    }
+
+    function handleLogout() {
+        localStorage.removeItem("tahai_user");
+        currentUser = "";
+        location.reload();
+    }
+
+    document.getElementById("usernameInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            handleLogin();
+        }
+    });
+
+    checkAuth();
 
     function setCircularFavicon(imageUrl) {
         const img = new Image();
@@ -522,7 +701,7 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             const swCode = `
-                const CACHE_NAME = 'vocab-cache-v15';
+                const CACHE_NAME = 'vocab-cache-v16';
                 const ASSETS = [
                     './',
                     './index.html',
@@ -578,6 +757,7 @@
     }
 
     let words = normalizeData(JSON.parse(localStorage.getItem("vocabularyList")) || []);
+    let historyRecords = JSON.parse(localStorage.getItem("vocabularyHistory")) || [];
 
     function updateStatus(text, isError = false) {
         const status = document.getElementById("syncStatus");
@@ -604,6 +784,19 @@
         }
     }
 
+    async function saveHistoryStorage() {
+        localStorage.setItem("vocabularyHistory", JSON.stringify(historyRecords));
+        try {
+            await fetch(HISTORY_URL, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(historyRecords)
+            });
+        } catch (err) {
+            console.log("History sync error:", err);
+        }
+    }
+
     async function loadFromFirebase() {
         updateStatus("雲端狀態：正在從雲端載入資料...");
         try {
@@ -622,9 +815,35 @@
             } else {
                 updateStatus("雲端狀態：讀取失敗，使用本機暫存資料", true);
             }
+
+            // 載入歷史紀錄
+            const hRes = await fetch(HISTORY_URL);
+            if (hRes.ok) {
+                const hData = await hRes.json();
+                if (hData) {
+                    historyRecords = Array.isArray(hData) ? hData : Object.values(hData);
+                    localStorage.setItem("vocabularyHistory", JSON.stringify(historyRecords));
+                }
+            }
         } catch (err) {
             updateStatus("雲端狀態：離線模式，使用本機暫存資料");
         }
+    }
+
+    function addHistoryLog(actionType, targetWord, details, beforeState, afterState) {
+        const record = {
+            id: 'h_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            timestamp: new Date().toLocaleString('zh-TW', { hour12: false }),
+            user: currentUser || "未知使用者",
+            actionType, // "新增單字", "新增變形詞", "更正內容", "刪除項目"
+            targetWord,
+            details,
+            beforeState: beforeState ? JSON.parse(JSON.stringify(beforeState)) : null,
+            afterState: afterState ? JSON.parse(JSON.stringify(afterState)) : null
+        };
+        historyRecords.unshift(record);
+        if (historyRecords.length > 200) historyRecords.pop(); // 保留近 200 筆
+        saveHistoryStorage();
     }
 
     function performSort() {
@@ -726,10 +945,15 @@
             return;
         }
 
-        words.push({
+        // 全新新增
+        const newObj = {
             word: word,
             senses: [{ pos, def, form: '' }]
-        });
+        };
+        words.push(newObj);
+
+        addHistoryLog("新增單字", word, `新增單字【${pos} ${def}】`, null, newObj);
+
         performSort();
         saveStorage();
         renderList();
@@ -774,9 +998,15 @@
         const selectedRadio = document.querySelector('input[name="replaceSenseIndex"]:checked');
         const replaceIdx = selectedRadio ? parseInt(selectedRadio.value, 10) : 0;
 
-        const targetSense = words[pendingEntry.index].senses[replaceIdx];
+        const mainWordObj = words[pendingEntry.index];
+        const beforeState = JSON.parse(JSON.stringify(mainWordObj));
+
+        const targetSense = mainWordObj.senses[replaceIdx];
+        const oldDefText = `${targetSense.pos} ${targetSense.def}`;
         targetSense.pos = pendingEntry.pos;
         targetSense.def = pendingEntry.def;
+
+        addHistoryLog("更正內容", mainWordObj.word, `更正原【${oldDefText}】為【${pendingEntry.pos} ${pendingEntry.def}】`, beforeState, mainWordObj);
 
         closeConflictModal();
         performSort();
@@ -787,14 +1017,17 @@
 
     function confirmAddDuplicate() {
         if (!pendingEntry) return;
-        const mainWord = words[pendingEntry.index];
-        const isDiffForm = pendingEntry.word.toLowerCase() !== mainWord.word.toLowerCase();
+        const mainWordObj = words[pendingEntry.index];
+        const beforeState = JSON.parse(JSON.stringify(mainWordObj));
 
-        mainWord.senses.push({
+        const isDiffForm = pendingEntry.word.toLowerCase() !== mainWordObj.word.toLowerCase();
+        mainWordObj.senses.push({
             pos: pendingEntry.pos,
             def: pendingEntry.def,
             form: isDiffForm ? pendingEntry.word : ''
         });
+
+        addHistoryLog("新增解釋", mainWordObj.word, `為已存在單字新增【${pendingEntry.pos} ${pendingEntry.def}】`, beforeState, mainWordObj);
 
         closeConflictModal();
         performSort();
@@ -828,6 +1061,8 @@
     function confirmVariantMerge() {
         if (!pendingVariant) return;
         const targetWordObj = words[pendingVariant.targetIndex];
+        const beforeState = JSON.parse(JSON.stringify(targetWordObj));
+
         const oldWord = targetWordObj.word;
         const newWord = pendingVariant.word;
 
@@ -845,6 +1080,8 @@
             targetWordObj.word = newWord;
         }
 
+        addHistoryLog("新增變形詞", targetWordObj.word, `合併變形詞「${newWord}」【${pendingVariant.pos} ${pendingVariant.def}】`, beforeState, targetWordObj);
+
         closeVariantModal();
         performSort();
         saveStorage();
@@ -854,10 +1091,13 @@
 
     function confirmVariantExtra() {
         if (!pendingVariant) return;
-        words.push({
+        const newObj = {
             word: pendingVariant.word,
             senses: [{ pos: pendingVariant.pos, def: pendingVariant.def, form: '' }]
-        });
+        };
+        words.push(newObj);
+
+        addHistoryLog("新增單字", pendingVariant.word, `獨立新增相近詞「${pendingVariant.word}」【${pendingVariant.pos} ${pendingVariant.def}】`, null, newObj);
 
         closeVariantModal();
         performSort();
@@ -940,12 +1180,116 @@
             return;
         }
 
+        const beforeState = JSON.parse(JSON.stringify(targetWord));
+
         targetWord.senses.splice(senseIndex, 1);
+        let afterState = null;
         if (targetWord.senses.length === 0) {
             words.splice(wordIndex, 1);
+            afterState = null;
+        } else {
+            afterState = targetWord;
         }
+
+        addHistoryLog("刪除項目", targetWord.word, `刪除【${sense.pos} ${sense.def}】`, beforeState, afterState);
+
         saveStorage();
         renderList();
+    }
+
+    /* 歷史紀錄彈窗與恢復邏輯 */
+    function openHistory() {
+        const container = document.getElementById("historyListContainer");
+        container.innerHTML = "";
+
+        if (historyRecords.length === 0) {
+            container.innerHTML = '<div class="empty-tip">目前尚無歷史操作紀錄。</div>';
+        } else {
+            let html = `
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 18%;">時間</th>
+                            <th style="width: 14%;">使用者</th>
+                            <th style="width: 14%;">動作</th>
+                            <th style="width: 18%;">單字</th>
+                            <th style="width: 24%;">詳細內容</th>
+                            <th style="width: 12%;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            historyRecords.forEach((record, index) => {
+                html += `
+                    <tr>
+                        <td>${record.timestamp}</td>
+                        <td><strong>${record.user}</strong></td>
+                        <td>${record.actionType}</td>
+                        <td><strong>${record.targetWord}</strong></td>
+                        <td>${record.details}</td>
+                        <td style="text-align: center;">
+                            <button class="restore-btn" onclick="restoreRecord(${index})">恢復此紀錄</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        document.getElementById("historyModal").style.display = "flex";
+    }
+
+    function closeHistory() {
+        document.getElementById("historyModal").style.display = "none";
+    }
+
+    // 恢復該筆紀錄（只更動該筆紀錄相關的單字狀態）
+    function restoreRecord(recordIndex) {
+        const record = historyRecords[recordIndex];
+        if (!record) return;
+
+        const confirmRestore = confirm(`確定要恢復此筆紀錄嗎？\n[${record.timestamp}] ${record.user} ${record.actionType}：${record.details}\n（將會只還原該筆單字至異動前的狀態）`);
+        if (!confirmRestore) return;
+
+        const before = record.beforeState;
+        const after = record.afterState;
+        const targetWord = record.targetWord.toLowerCase();
+
+        // 尋找目前清單中對應的單字
+        const currentIndex = words.findIndex(w => w.word.toLowerCase() === targetWord);
+
+        if (!before && after) {
+            // 原本是「全新新增」 -> 還原代表將該單字移除
+            if (currentIndex !== -1) {
+                words.splice(currentIndex, 1);
+            }
+        } else if (before && !after) {
+            // 原本是「全部刪除」 -> 還原代表將該單字重新加回
+            if (currentIndex !== -1) {
+                words[currentIndex] = JSON.parse(JSON.stringify(before));
+            } else {
+                words.push(JSON.parse(JSON.stringify(before)));
+            }
+        } else if (before && after) {
+            // 原本是「修改/新增局部/刪除局部」 -> 還原代表改回 beforeState
+            if (currentIndex !== -1) {
+                words[currentIndex] = JSON.parse(JSON.stringify(before));
+            } else {
+                words.push(JSON.parse(JSON.stringify(before)));
+            }
+        }
+
+        // 記錄「恢復操作」本身
+        addHistoryLog("恢復紀錄", record.targetWord, `恢復了 [${record.timestamp}] 之操作：${record.details}`, null, null);
+
+        performSort();
+        saveStorage();
+        renderList();
+        openHistory(); // 重新整理歷史清單
+        alert("已成功恢復該筆紀錄！");
     }
 
     function getGroupedWords() {
