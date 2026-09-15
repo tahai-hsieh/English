@@ -281,7 +281,7 @@
         }
 
         .col-word {
-            width: 32%;
+            width: 30%;
             font-size: 18px;
             font-weight: 600;
             color: #000;
@@ -289,21 +289,34 @@
         }
 
         .col-pos {
-            width: 28%;
+            width: 27%;
             color: #000;
             font-weight: 500;
         }
 
         .col-def {
-            width: 30%;
+            width: 28%;
             color: #000;
         }
 
         .col-ops {
-            width: 10%;
+            width: 15%;
             text-align: center;
             border: 1px solid #000;
+            white-space: nowrap;
         }
+
+        .edit-btn {
+            background-color: transparent;
+            color: #3498db;
+            border: 1px solid #3498db;
+            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-right: 4px;
+        }
+        .edit-btn:hover { background-color: #3498db; color: #fff; }
 
         .delete-btn {
             background-color: transparent;
@@ -313,13 +326,11 @@
             border-radius: 4px;
             font-size: 12px;
             cursor: pointer;
-            width: 100%;
-            max-width: 48px;
         }
         .delete-btn:hover { background-color: #e74c3c; color: #fff; }
 
         /* 彈窗樣式 */
-        #conflictModal, #variantModal, #previewModal, #historyModal {
+        #conflictModal, #variantModal, #previewModal, #historyModal, #addToExistingModal, #editSenseModal {
             display: none;
             position: fixed;
             top: 0; left: 0;
@@ -393,7 +404,29 @@
             border-bottom: 1px dashed #eee;
         }
 
-        /* 歷史紀錄專用表格樣式 */
+        .form-row {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 12px;
+            text-align: left;
+        }
+
+        .form-row label {
+            font-size: 13px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        .form-row input, .form-row select {
+            padding: 10px;
+            font-size: 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            outline: none;
+        }
+
+        /* 歷史紀錄表格樣式 */
         .history-table {
             width: 100%;
             border-collapse: collapse;
@@ -460,17 +493,18 @@
             .container { padding: 16px; }
             h1 { font-size: 20px; }
             .input-group { flex-direction: column; gap: 8px; }
-            #wordInput, #posSelect, #defInput, .input-group .btn-primary { width: 100%; min-width: 0; }
+            #wordInput, #posSelect, #defInput, .input-group .btn { width: 100%; min-width: 0; }
             .search-group { flex-direction: column; gap: 8px; }
             #searchInput, .search-group .btn { width: 100%; }
             .action-bar { flex-direction: column; }
             .action-bar .btn { width: 100%; }
-            .col-word { font-size: 16px; width: 28%; }
-            .col-pos { width: 34%; }
-            .col-def { width: 26%; }
-            .col-ops { width: 12%; }
-            .word-table td { padding: 6px 6px; font-size: 13px; }
-            .drag-bar { width: 28px; font-size: 14px; }
+            .col-word { font-size: 15px; width: 26%; }
+            .col-pos { width: 32%; }
+            .col-def { width: 24%; }
+            .col-ops { width: 18%; }
+            .edit-btn, .delete-btn { padding: 3px 4px; font-size: 11px; }
+            .word-table td { padding: 6px 4px; font-size: 13px; }
+            .drag-bar { width: 26px; font-size: 14px; }
             .history-table th, .history-table td { padding: 6px 4px; font-size: 12px; }
         }
     </style>
@@ -521,6 +555,7 @@
             enterkeyhint="done"
         >
         <button class="btn btn-primary" onclick="handleAddAction()">新增</button>
+        <button class="btn btn-warning" onclick="openAddToExistingModal()">新增到現有單字</button>
     </div>
 
     <div class="search-group">
@@ -583,6 +618,69 @@
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="confirmVariantExtra()">否，額外新增</button>
             <button class="btn btn-primary" onclick="confirmVariantMerge()">是，新增至該單字</button>
+        </div>
+    </div>
+</div>
+
+<div id="addToExistingModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>選擇要加入的現有單字</h2>
+        </div>
+        <div class="modal-body">
+            <p style="font-size: 14px; color: #2c3e50; margin-bottom: 10px;">
+                欲新增的內容：<strong id="addToExistingPreview" style="color: #e67e22;"></strong>
+            </p>
+            <input 
+                type="text" 
+                id="existingWordFilterInput" 
+                placeholder="過濾單字清單..." 
+                style="width: 100%; padding: 8px 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 10px;"
+                oninput="renderExistingWordOptions()"
+            >
+            <div class="conflict-box" id="existingWordsOptionsList" style="max-height: 280px; overflow-y: auto;"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeAddToExistingModal()">取消</button>
+            <button class="btn btn-primary" onclick="confirmAddToExisting()">確認加入</button>
+        </div>
+    </div>
+</div>
+
+<div id="editSenseModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>修改單字欄位</h2>
+        </div>
+        <div class="modal-body">
+            <div class="form-row">
+                <label for="editWordBase">最左側主單字（原形）</label>
+                <input type="text" id="editWordBase" placeholder="請輸入『主單字』">
+            </div>
+            <div class="form-row">
+                <label for="editWordForm">此列單字型態（若為原形請留空或填原形）</label>
+                <input type="text" id="editWordForm" placeholder="例如：cautiously（原形請填原形或留空）">
+            </div>
+            <div class="form-row">
+                <label for="editPosSelect">詞性</label>
+                <select id="editPosSelect">
+                    <option value="n.">n. 名詞</option>
+                    <option value="v.">v. 動詞</option>
+                    <option value="adj.">adj. 形容詞</option>
+                    <option value="adv.">adv. 副詞</option>
+                    <option value="prep.">prep. 介系詞</option>
+                    <option value="conj.">conj. 連接詞</option>
+                    <option value="phr.">phr. 片語</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label for="editDefInput">中文解釋</label>
+                <input type="text" id="editDefInput" placeholder="請輸入『中文解釋』">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeEditSenseModal()">取消</button>
+            <button class="btn btn-primary" onclick="confirmSaveEditSense()">儲存修改</button>
         </div>
     </div>
 </div>
@@ -701,7 +799,7 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             const swCode = `
-                const CACHE_NAME = 'vocab-cache-v17';
+                const CACHE_NAME = 'vocab-cache-v19';
                 const ASSETS = [
                     './',
                     './index.html',
@@ -736,23 +834,77 @@
         });
     }
 
+    const COMMON_SUFFIXES = [
+        'ly', 'ness', 'tion', 'sion', 'able', 'ible', 'al', 'ive',
+        'ful', 'ic', 'ment', 'd', 'ed', 'ing', 'er', 'est', 's', 'es',
+        'ize', 'ise', 'ity', 'y'
+    ];
+
+    function isDerivativeOf(target, base) {
+        const t = target.toLowerCase();
+        const b = base.toLowerCase();
+        if (t === b || t.length <= b.length) return false;
+
+        for (const suffix of COMMON_SUFFIXES) {
+            if (t === b + suffix) return true;
+            if (b.endsWith('e') && t === b.slice(0, -1) + suffix) return true;
+            if (b.endsWith('y') && t === b.slice(0, -1) + 'i' + suffix) return true;
+        }
+        return false;
+    }
+
+    function isWordVariant(w1, w2) {
+        const a = w1.toLowerCase();
+        const b = w2.toLowerCase();
+        if (a === b) return false;
+
+        if (isDerivativeOf(a, b) || isDerivativeOf(b, a)) return true;
+
+        const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a];
+        if (shorter.length >= 4) {
+            let commonLen = 0;
+            while (commonLen < shorter.length && shorter[commonLen] === longer[commonLen]) {
+                commonLen++;
+            }
+            if (commonLen >= shorter.length * 0.8 && (longer.length - commonLen) <= 4) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /* 確保單字項目內的詞性欄位自動將「原形」排在最上方 */
+    function sortSensesBaseFirst(wordObj) {
+        const base = (wordObj.word || '').trim().toLowerCase();
+        wordObj.senses.sort((a, b) => {
+            const formA = (a.form || '').trim().toLowerCase();
+            const formB = (b.form || '').trim().toLowerCase();
+            const isBaseA = (formA === '' || formA === base);
+            const isBaseB = (formB === '' || formB === base);
+
+            if (isBaseA && !isBaseB) return -1;
+            if (!isBaseA && isBaseB) return 1;
+            return 0;
+        });
+    }
+
     function normalizeData(rawData) {
         if (!Array.isArray(rawData)) return [];
         return rawData.map(item => {
+            let senses = [];
             if (item.senses && Array.isArray(item.senses)) {
-                return {
-                    word: item.word,
-                    senses: item.senses.map(s => ({
-                        pos: s.pos || '',
-                        def: s.def || '',
-                        form: s.form || ''
-                    }))
-                };
+                senses = item.senses.map(s => ({
+                    pos: s.pos || '',
+                    def: s.def || '',
+                    form: s.form || ''
+                }));
+            } else {
+                senses = [{ pos: item.pos || '', def: item.def || '', form: '' }];
             }
-            return {
-                word: item.word,
-                senses: [{ pos: item.pos || '', def: item.def || '', form: '' }]
-            };
+
+            const obj = { word: item.word, senses };
+            sortSensesBaseFirst(obj);
+            return obj;
         });
     }
 
@@ -846,6 +998,7 @@
     }
 
     function performSort() {
+        words.forEach(w => sortSensesBaseFirst(w));
         words.sort((a, b) => {
             const wordA = a.word.toLowerCase();
             const wordB = b.word.toLowerCase();
@@ -865,45 +1018,6 @@
         performSort();
         saveStorage();
         renderList();
-    }
-
-    const COMMON_SUFFIXES = [
-        'ly', 'ness', 'tion', 'sion', 'able', 'ible', 'al', 'ive',
-        'ful', 'ic', 'ment', 'd', 'ed', 'ing', 'er', 'est', 's', 'es',
-        'ize', 'ise', 'ity', 'y'
-    ];
-
-    function isDerivativeOf(target, base) {
-        const t = target.toLowerCase();
-        const b = base.toLowerCase();
-        if (t === b || t.length <= b.length) return false;
-
-        for (const suffix of COMMON_SUFFIXES) {
-            if (t === b + suffix) return true;
-            if (b.endsWith('e') && t === b.slice(0, -1) + suffix) return true;
-            if (b.endsWith('y') && t === b.slice(0, -1) + 'i' + suffix) return true;
-        }
-        return false;
-    }
-
-    function isWordVariant(w1, w2) {
-        const a = w1.toLowerCase();
-        const b = w2.toLowerCase();
-        if (a === b) return false;
-
-        if (isDerivativeOf(a, b) || isDerivativeOf(b, a)) return true;
-
-        const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a];
-        if (shorter.length >= 4) {
-            let commonLen = 0;
-            while (commonLen < shorter.length && shorter[commonLen] === longer[commonLen]) {
-                commonLen++;
-            }
-            if (commonLen >= shorter.length * 0.8 && (longer.length - commonLen) <= 4) {
-                return true;
-            }
-        }
-        return false;
     }
 
     let pendingEntry = null;
@@ -1004,6 +1118,7 @@
         targetSense.pos = pendingEntry.pos;
         targetSense.def = pendingEntry.def;
 
+        sortSensesBaseFirst(mainWordObj);
         addHistoryLog("更正內容", mainWordObj.word, `更正原【${oldDefText}】為【${pendingEntry.pos} ${pendingEntry.def}】`, beforeState, mainWordObj);
 
         closeConflictModal();
@@ -1025,6 +1140,7 @@
             form: isDiffForm ? pendingEntry.word : ''
         });
 
+        sortSensesBaseFirst(mainWordObj);
         addHistoryLog("新增解釋", mainWordObj.word, `為已存在單字新增【${pendingEntry.pos} ${pendingEntry.def}】`, beforeState, mainWordObj);
 
         closeConflictModal();
@@ -1074,9 +1190,13 @@
             form: newWord
         });
 
+        // 原形替換檢查：若新字為原形，將最左側欄位改為新字（原形）
         if (isDerivativeOf(oldWord, newWord)) {
             targetWordObj.word = newWord;
         }
+
+        // 原形詞性置頂
+        sortSensesBaseFirst(targetWordObj);
 
         addHistoryLog("新增變形詞", targetWordObj.word, `合併變形詞「${newWord}」【${pendingVariant.pos} ${pendingVariant.def}】`, beforeState, targetWordObj);
 
@@ -1102,6 +1222,178 @@
         saveStorage();
         renderList();
         resetInputs();
+    }
+
+    /* 手動新增到現有單字機制 */
+    let pendingManualTarget = null;
+
+    function openAddToExistingModal() {
+        const wordInput = document.getElementById("wordInput");
+        const posSelect = document.getElementById("posSelect");
+        const defInput = document.getElementById("defInput");
+
+        const rawWord = wordInput.value.trim();
+        const pos = posSelect.value;
+        const def = defInput.value.trim();
+
+        if (!rawWord || !def) {
+            alert("請先在上方輸入單字與中文解釋！");
+            return;
+        }
+
+        if (words.length === 0) {
+            alert("目前單字庫中尚無任何單字可供加入！");
+            return;
+        }
+
+        const isProperNoun = /(?:（|\()專有名詞(?:）|\))\s*$/.test(def);
+        const word = isProperNoun ? rawWord : rawWord.toLowerCase();
+
+        pendingManualTarget = { rawWord, word, pos, def };
+        document.getElementById("addToExistingPreview").textContent = `${word} [${pos} ${def}]`;
+        document.getElementById("existingWordFilterInput").value = "";
+        renderExistingWordOptions();
+        document.getElementById("addToExistingModal").style.display = "flex";
+    }
+
+    function renderExistingWordOptions() {
+        const filter = document.getElementById("existingWordFilterInput").value.trim().toLowerCase();
+        const container = document.getElementById("existingWordsOptionsList");
+        container.innerHTML = "";
+
+        const filtered = words.map((w, idx) => ({ ...w, originalIdx: idx })).filter(w => {
+            if (!filter) return true;
+            if (w.word.toLowerCase().includes(filter)) return true;
+            return w.senses.some(s => (s.form && s.form.toLowerCase().includes(filter)) || s.def.includes(filter));
+        });
+
+        if (filtered.length === 0) {
+            container.innerHTML = '<div style="color:#999; text-align:center; padding:10px;">無符合之現有單字</div>';
+            return;
+        }
+
+        filtered.forEach((w, i) => {
+            const label = document.createElement("label");
+            label.className = "def-radio-label";
+            const summary = w.senses.map(s => `${s.pos} ${s.def}`).join('；');
+            label.innerHTML = `
+                <input type="radio" name="selectedExistingWordIdx" value="${w.originalIdx}" ${i === 0 ? 'checked' : ''}>
+                <span><strong>${w.word}</strong> <small style="color:#7f8c8d;">(${summary})</small></span>
+            `;
+            container.appendChild(label);
+        });
+    }
+
+    function closeAddToExistingModal() {
+        document.getElementById("addToExistingModal").style.display = "none";
+        pendingManualTarget = null;
+    }
+
+    function confirmAddToExisting() {
+        if (!pendingManualTarget) return;
+
+        const selectedRadio = document.querySelector('input[name="selectedExistingWordIdx"]:checked');
+        if (!selectedRadio) {
+            alert("請選擇一個現有的單字！");
+            return;
+        }
+
+        const targetIndex = parseInt(selectedRadio.value, 10);
+        const targetWordObj = words[targetIndex];
+        if (!targetWordObj) return;
+
+        const beforeState = JSON.parse(JSON.stringify(targetWordObj));
+        const oldWord = targetWordObj.word;
+        const newWord = pendingManualTarget.word;
+
+        if (targetWordObj.senses.length > 0 && !targetWordObj.senses[0].form) {
+            targetWordObj.senses[0].form = oldWord;
+        }
+
+        targetWordObj.senses.push({
+            pos: pendingManualTarget.pos,
+            def: pendingManualTarget.def,
+            form: newWord
+        });
+
+        if (isDerivativeOf(oldWord, newWord)) {
+            targetWordObj.word = newWord;
+        }
+
+        // 原形詞性置頂
+        sortSensesBaseFirst(targetWordObj);
+
+        addHistoryLog("新增變形詞", targetWordObj.word, `手動加入單字「${newWord}」【${pendingManualTarget.pos} ${pendingManualTarget.def}】至【${oldWord}】列`, beforeState, targetWordObj);
+
+        closeAddToExistingModal();
+        performSort();
+        saveStorage();
+        renderList();
+        resetInputs();
+    }
+
+    /* 單字欄位修改編輯機制 */
+    let currentEditTarget = null;
+
+    function openEditSenseModal(wordIndex, senseIndex) {
+        const targetWord = words[wordIndex];
+        if (!targetWord || !targetWord.senses[senseIndex]) return;
+
+        currentEditTarget = { wordIndex, senseIndex };
+        const sense = targetWord.senses[senseIndex];
+
+        document.getElementById("editWordBase").value = targetWord.word;
+        document.getElementById("editWordForm").value = sense.form || targetWord.word;
+        document.getElementById("editPosSelect").value = sense.pos;
+        document.getElementById("editDefInput").value = sense.def;
+
+        document.getElementById("editSenseModal").style.display = "flex";
+    }
+
+    function closeEditSenseModal() {
+        document.getElementById("editSenseModal").style.display = "none";
+        currentEditTarget = null;
+    }
+
+    function confirmSaveEditSense() {
+        if (!currentEditTarget) return;
+
+        const { wordIndex, senseIndex } = currentEditTarget;
+        const targetWord = words[wordIndex];
+        if (!targetWord || !targetWord.senses[senseIndex]) return;
+
+        const newWordBase = document.getElementById("editWordBase").value.trim();
+        const newWordForm = document.getElementById("editWordForm").value.trim();
+        const newPos = document.getElementById("editPosSelect").value;
+        const newDef = document.getElementById("editDefInput").value.trim();
+
+        if (!newWordBase || !newDef) {
+            alert("主單字與中文解釋不能為空！");
+            return;
+        }
+
+        const beforeState = JSON.parse(JSON.stringify(targetWord));
+
+        // 更新主單字原形
+        targetWord.word = newWordBase;
+
+        // 更新該筆解釋
+        targetWord.senses[senseIndex] = {
+            pos: newPos,
+            def: newDef,
+            form: (newWordForm && newWordForm.toLowerCase() !== newWordBase.toLowerCase()) ? newWordForm : ''
+        };
+
+        // 原形詞性置頂
+        sortSensesBaseFirst(targetWord);
+
+        addHistoryLog("修改欄位", targetWord.word, `修改【${newPos} ${newDef}】（型態: ${newWordForm || newWordBase}）`, beforeState, targetWord);
+
+        closeEditSenseModal();
+        performSort();
+        saveStorage();
+        renderList();
+        alert("修改已儲存完成！");
     }
 
     function handleSearch() {
@@ -1186,6 +1478,7 @@
             words.splice(wordIndex, 1);
             afterState = null;
         } else {
+            sortSensesBaseFirst(targetWord);
             afterState = targetWord;
         }
 
@@ -1261,16 +1554,20 @@
                 words.splice(currentIndex, 1);
             }
         } else if (before && !after) {
+            const restoredObj = JSON.parse(JSON.stringify(before));
+            sortSensesBaseFirst(restoredObj);
             if (currentIndex !== -1) {
-                words[currentIndex] = JSON.parse(JSON.stringify(before));
+                words[currentIndex] = restoredObj;
             } else {
-                words.push(JSON.parse(JSON.stringify(before)));
+                words.push(restoredObj);
             }
         } else if (before && after) {
+            const restoredObj = JSON.parse(JSON.stringify(before));
+            sortSensesBaseFirst(restoredObj);
             if (currentIndex !== -1) {
-                words[currentIndex] = JSON.parse(JSON.stringify(before));
+                words[currentIndex] = restoredObj;
             } else {
-                words.push(JSON.parse(JSON.stringify(before)));
+                words.push(restoredObj);
             }
         }
 
@@ -1395,6 +1692,7 @@
 
                     rowsHtml += `
                         <td class="col-ops">
+                            <button class="edit-btn" onclick="openEditSenseModal(${item.originalIndex}, ${sIdx})">修改</button>
                             <button class="delete-btn" onclick="deleteSenseItem(${item.originalIndex}, ${sIdx})">刪除</button>
                         </td>
                     `;
