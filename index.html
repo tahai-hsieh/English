@@ -373,13 +373,11 @@
     <h1>大海的學測英文單字庫</h1>
     <div class="sync-status" id="syncStatus">雲端狀態：連線中...</div>
 
-    <!-- 輸入區 -->
     <div class="input-group">
         <input 
-            type="text" 
+            type="email" 
             id="wordInput" 
             placeholder="英文單字 (例: cautious / cautiously)"
-            lang="en"
             autocapitalize="none"
             autocorrect="off"
             spellcheck="false"
@@ -404,13 +402,11 @@
         <button class="btn btn-primary" onclick="handleAddAction()">新增</button>
     </div>
 
-    <!-- 搜尋筐區域 -->
     <div class="search-group">
         <input 
-            type="text" 
+            type="email" 
             id="searchInput" 
             placeholder="輸入欲查詢的單字..."
-            lang="en"
             autocapitalize="none"
             autocorrect="off"
             spellcheck="false"
@@ -419,18 +415,15 @@
         <button class="btn btn-info" onclick="handleSearch()">搜尋</button>
     </div>
 
-    <!-- 工具按鈕列 -->
     <div class="action-bar">
         <button class="btn btn-secondary" onclick="autoGroupAndSort()">重新自動排列</button>
         <button class="btn btn-preview" onclick="openPreview()">預覽輸出</button>
         <button class="btn btn-export" onclick="exportPDF()">輸出成 PDF</button>
     </div>
 
-    <!-- 按 A-Z 字母群組容器 -->
     <div id="groupedWordContainer"></div>
 </div>
 
-<!-- 1. 完全同名單字提示詢問視窗 -->
 <div id="conflictModal">
     <div class="modal-card">
         <div class="modal-header">
@@ -452,7 +445,6 @@
     </div>
 </div>
 
-<!-- 2. 變形/相近單字提示詢問視窗 -->
 <div id="variantModal">
     <div class="modal-card">
         <div class="modal-header">
@@ -473,7 +465,6 @@
     </div>
 </div>
 
-<!-- 預覽視窗 -->
 <div id="previewModal">
     <div class="modal-card">
         <div class="modal-header">
@@ -489,7 +480,6 @@
     </div>
 </div>
 
-<!-- PDF 輸出專用隱藏容器 -->
 <div id="pdfExportContainer" style="display: none;"></div>
 
 <script>
@@ -532,7 +522,7 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             const swCode = `
-                const CACHE_NAME = 'vocab-cache-v14';
+                const CACHE_NAME = 'vocab-cache-v15';
                 const ASSETS = [
                     './',
                     './index.html',
@@ -938,7 +928,6 @@
         }
     });
 
-    /* 刪除確認防護機制 */
     function deleteSenseItem(wordIndex, senseIndex) {
         const targetWord = words[wordIndex];
         if (!targetWord || !targetWord.senses[senseIndex]) return;
@@ -948,7 +937,7 @@
         const confirmMsg = `確定要刪除「${displayWord}」的【${sense.pos} ${sense.def}】嗎？`;
 
         if (!confirm(confirmMsg)) {
-            return; // 使用者按取消，終止刪除
+            return;
         }
 
         targetWord.senses.splice(senseIndex, 1);
