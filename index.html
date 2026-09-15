@@ -373,7 +373,7 @@
     <h1>大海的學測英文單字庫</h1>
     <div class="sync-status" id="syncStatus">雲端狀態：連線中...</div>
 
-    <!-- 輸入區：加入 lang 與輸入法屬性，引導行動載具鍵盤語言 -->
+    <!-- 輸入區 -->
     <div class="input-group">
         <input 
             type="text" 
@@ -532,7 +532,7 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             const swCode = `
-                const CACHE_NAME = 'vocab-cache-v12';
+                const CACHE_NAME = 'vocab-cache-v14';
                 const ASSETS = [
                     './',
                     './index.html',
@@ -762,7 +762,7 @@
         existingWordObj.senses.forEach((sense, idx) => {
             const label = document.createElement("label");
             label.className = "def-radio-label";
-            const formText = sense.form ? `(${sense.form}) ` : '';
+            const formText = (sense.form && sense.form.toLowerCase() !== existingWordObj.word.toLowerCase()) ? `(${sense.form}) ` : '';
             label.innerHTML = `
                 <input type="radio" name="replaceSenseIndex" value="${idx}" ${idx === 0 ? 'checked' : ''}>
                 <span><strong>${sense.pos} ${formText}</strong>${sense.def}</span>
@@ -821,7 +821,7 @@
         existingWordObj.senses.forEach((sense) => {
             const div = document.createElement("div");
             div.style.padding = "4px 0";
-            const formText = sense.form ? `(${sense.form}) ` : '';
+            const formText = (sense.form && sense.form.toLowerCase() !== existingWordObj.word.toLowerCase()) ? `(${sense.form}) ` : '';
             div.innerHTML = `• <strong>${sense.pos} ${formText}</strong>${sense.def}`;
             container.appendChild(div);
         });
@@ -938,10 +938,21 @@
         }
     });
 
+    /* 刪除確認防護機制 */
     function deleteSenseItem(wordIndex, senseIndex) {
-        if (!words[wordIndex]) return;
-        words[wordIndex].senses.splice(senseIndex, 1);
-        if (words[wordIndex].senses.length === 0) {
+        const targetWord = words[wordIndex];
+        if (!targetWord || !targetWord.senses[senseIndex]) return;
+
+        const sense = targetWord.senses[senseIndex];
+        const displayWord = sense.form ? `${targetWord.word} (${sense.form})` : targetWord.word;
+        const confirmMsg = `確定要刪除「${displayWord}」的【${sense.pos} ${sense.def}】嗎？`;
+
+        if (!confirm(confirmMsg)) {
+            return; // 使用者按取消，終止刪除
+        }
+
+        targetWord.senses.splice(senseIndex, 1);
+        if (targetWord.senses.length === 0) {
             words.splice(wordIndex, 1);
         }
         saveStorage();
@@ -961,21 +972,41 @@
         return groups;
     }
 
-    function formatPosColumn(sense) {
-        if (sense.form && sense.form.trim() !== '') {
-            return `${sense.pos}（ ${sense.form} ）`;
+    function formatPosColumn(itemWord, sense, hasVariantInGroup) {
+        const form = (sense.form || '').trim();
+        const effectiveForm = (form !== '' && form.toLowerCase() !== itemWord.toLowerCase()) ? form : '';
+
+        if (hasVariantInGroup) {
+            const displayForm = effectiveForm || itemWord;
+            return `${sense.pos} ( ${displayForm} )`;
+        }
+
+        if (effectiveForm !== '') {
+            return `${sense.pos} ( ${effectiveForm} )`;
         }
         return sense.pos;
     }
 
-    function calculatePosRowspans(senses) {
+    function calculatePosRowspans(item) {
+        const itemWord = item.word;
+        const senses = item.senses;
+        const hasVariantInGroup = senses.some(s => {
+            const f = (s.form || '').trim();
+            return f !== '' && f.toLowerCase() !== itemWord.toLowerCase();
+        });
+
         const result = [];
         let i = 0;
         while (i < senses.length) {
-            const currentPosText = formatPosColumn(senses[i]);
+            const currentPosText = formatPosColumn(itemWord, senses[i], hasVariantInGroup);
             let count = 1;
-            while (i + count < senses.length && formatPosColumn(senses[i + count]) === currentPosText) {
-                count++;
+            while (i + count < senses.length) {
+                const nextPosText = formatPosColumn(itemWord, senses[i + count], hasVariantInGroup);
+                if (nextPosText === currentPosText) {
+                    count++;
+                } else {
+                    break;
+                }
             }
             result.push({ text: currentPosText, rowspan: count });
             for (let k = 1; k < count; k++) {
@@ -1021,7 +1052,7 @@
                 li.dataset.index = item.originalIndex;
 
                 const totalRows = item.senses.length;
-                const posGroups = calculatePosRowspans(item.senses);
+                const posGroups = calculatePosRowspans(item);
                 let rowsHtml = '';
 
                 item.senses.forEach((sense, sIdx) => {
@@ -1176,7 +1207,7 @@
             html += `<div class="pdf-group-title">${letter}</div>`;
             groups[letter].forEach((item) => {
                 const totalRows = item.senses.length;
-                const posGroups = calculatePosRowspans(item.senses);
+                const posGroups = calculatePosRowspans(item);
                 let rowsHtml = '';
 
                 item.senses.forEach((sense, sIdx) => {
