@@ -232,7 +232,7 @@
 
     <!-- 工具按鈕列 -->
     <div class="action-bar">
-        <button class="btn btn-secondary" onclick="autoGroupAndSort()">自動排列 (相近詞與字母)</button>
+        <button class="btn btn-secondary" onclick="autoGroupAndSort()">重新自動排列</button>
         <button class="btn btn-success" onclick="openPreview()">預覽輸出</button>
     </div>
 
@@ -311,7 +311,7 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             const swCode = `
-                const CACHE_NAME = 'vocab-cache-v2';
+                const CACHE_NAME = 'vocab-cache-v3';
                 const ASSETS = [
                     './',
                     './index.html',
@@ -331,7 +331,6 @@
                     );
                 });
                 self.addEventListener('fetch', (e) => {
-                    // Firebase 即時請求走網路，靜態檔案走快取
                     if (e.request.url.includes('firebasedatabase.app')) {
                         e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
                     } else {
@@ -356,7 +355,6 @@
         status.style.color = isError ? "#e74c3c" : "#7f8c8d";
     }
 
-    // 儲存至本地及雲端 Firebase
     async function saveStorage() {
         localStorage.setItem("vocabularyList", JSON.stringify(words));
         updateStatus("正在同步至雲端...");
@@ -376,7 +374,6 @@
         }
     }
 
-    // 首次載入自 Firebase 取得資料
     async function loadFromFirebase() {
         updateStatus("雲端狀態：正在從雲端載入資料...");
         try {
@@ -401,6 +398,29 @@
         }
     }
 
+    // 自動排列邏輯（抽離供新增時自動執行）
+    function performSort() {
+        words.sort((a, b) => {
+            const wordA = a.word.toLowerCase();
+            const wordB = b.word.toLowerCase();
+
+            const prefixLen = 3;
+            const prefixA = wordA.slice(0, prefixLen);
+            const prefixB = wordB.slice(0, prefixLen);
+
+            if (prefixA === prefixB) {
+                return wordA.localeCompare(wordB);
+            }
+            return wordA.localeCompare(wordB);
+        });
+    }
+
+    function autoGroupAndSort() {
+        performSort();
+        saveStorage();
+        renderList();
+    }
+
     function addWord() {
         const wordInput = document.getElementById("wordInput");
         const posSelect = document.getElementById("posSelect");
@@ -416,6 +436,10 @@
         }
 
         words.push({ word, pos, def });
+
+        // 新增後自動執行排序
+        performSort();
+
         saveStorage();
         renderList();
 
@@ -424,27 +448,40 @@
         wordInput.focus();
     }
 
-    function deleteWord(index) {
-        words.splice(index, 1);
-        saveStorage();
-        renderList();
+    /* 5. 輸入框 Enter 鍵偵測與輸入法組字（選字底線）判斷 */
+    let isComposing = false;
+
+    function handleCompositionStart() {
+        isComposing = true;
     }
 
-    function autoGroupAndSort() {
-        words.sort((a, b) => {
-            const wordA = a.word.toLowerCase();
-            const wordB = b.word.toLowerCase();
+    function handleCompositionEnd() {
+        isComposing = false;
+    }
 
-            const prefixLen = 3;
-            const prefixA = wordA.slice(0, prefixLen);
-            const prefixB = wordB.slice(0, prefixLen);
+    function handleKeyDown(e) {
+        // 如果正在輸入法組字（例如正在選中文字或有底線）或是按鍵碼 229，則不觸發新增
+        if (e.isComposing || isComposing || e.keyCode === 229) {
+            return;
+        }
 
-            if (prefixA === prefixB) {
-                return wordA.localeCompare(wordB);
-            }
-            return wordA.localeCompare(wordB);
-        });
+        if (e.key === "Enter") {
+            e.preventDefault();
+            addWord();
+        }
+    }
 
+    const wordInputEl = document.getElementById("wordInput");
+    const defInputEl = document.getElementById("defInput");
+
+    [wordInputEl, defInputEl].forEach((input) => {
+        input.addEventListener("compositionstart", handleCompositionStart);
+        input.addEventListener("compositionend", handleCompositionEnd);
+        input.addEventListener("keydown", handleKeyDown);
+    });
+
+    function deleteWord(index) {
+        words.splice(index, 1);
         saveStorage();
         renderList();
     }
@@ -550,7 +587,6 @@
         html2pdf().set(opt).from(element).save();
     }
 
-    // 初步繪製本地資料，並同時發起遠端同步
     renderList();
     loadFromFirebase();
 </script>
