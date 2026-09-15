@@ -107,6 +107,8 @@
         .btn-preview:hover { background-color: #27ae60; }
         .btn-export { background-color: #e67e22; color: #fff; }
         .btn-export:hover { background-color: #d35400; }
+        .btn-warning { background-color: #f39c12; color: #fff; }
+        .btn-warning:hover { background-color: #d68910; }
 
         .action-bar {
             display: flex;
@@ -115,9 +117,8 @@
             flex-wrap: wrap;
         }
 
-        /* 字母分組樣式 */
         .alphabet-section {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
 
         .alphabet-header {
@@ -126,71 +127,98 @@
             color: #e74c3c;
             border-bottom: 2px solid #e74c3c;
             padding-bottom: 4px;
-            margin-bottom: 10px;
-            font-family: inherit;
+            margin-bottom: 12px;
         }
 
         .word-list {
             list-style: none;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 12px;
             width: 100%;
         }
 
-        .word-item {
+        .word-card-item {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
-            padding: 12px 14px;
-            border-radius: 6px;
-            cursor: grab;
+            align-items: stretch;
+            background: #fff;
+            border: 1px solid #000;
+            border-radius: 2px;
+            overflow: hidden;
             user-select: none;
-            gap: 8px;
+            cursor: grab;
         }
 
-        .word-item.dragging {
+        .word-card-item.dragging {
             opacity: 0.4;
             background-color: #e3f2fd;
         }
 
-        .drag-handle {
+        .drag-bar {
+            width: 24px;
+            background: #f8fafc;
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: #aaa;
-            margin-right: 6px;
             cursor: grab;
+            font-size: 14px;
             flex-shrink: 0;
         }
 
-        .word-content {
-            display: flex;
-            align-items: baseline;
-            gap: 8px;
+        .word-table {
             flex: 1;
-            flex-wrap: wrap;
+            border-collapse: collapse;
+            width: 100%;
+            table-layout: fixed;
+        }
+
+        .word-table td {
+            border: 1px solid #000;
+            padding: 8px 12px;
+            font-size: 15px;
+            vertical-align: middle;
             word-break: break-word;
         }
 
-        .word-text { font-size: 16px; font-weight: 600; color: #2c3e50; }
-        .part-of-speech { font-size: 13px; color: #7f8c8d; font-style: italic; }
-        .definition { font-size: 14px; color: #34495e; }
+        .col-word {
+            width: 32%;
+            font-size: 18px;
+            font-weight: 600;
+            color: #000;
+            background-color: #fff;
+        }
+
+        .col-pos {
+            width: 28%;
+            color: #000;
+            font-weight: 500;
+        }
+
+        .col-def {
+            width: 30%;
+            color: #000;
+        }
+
+        .col-ops {
+            width: 10%;
+            text-align: center;
+            border: 1px solid #000;
+        }
 
         .delete-btn {
             background-color: transparent;
             color: #e74c3c;
             border: 1px solid #e74c3c;
-            padding: 6px 10px;
+            padding: 4px 6px;
             border-radius: 4px;
             font-size: 12px;
             cursor: pointer;
-            flex-shrink: 0;
         }
-
         .delete-btn:hover { background-color: #e74c3c; color: #fff; }
 
-        /* 預覽視窗 */
-        #previewModal {
+        #conflictModal, #variantModal, #previewModal {
             display: none;
             position: fixed;
             top: 0; left: 0;
@@ -222,7 +250,7 @@
         }
 
         .modal-body {
-            padding: 16px;
+            padding: 18px 20px;
             overflow-y: auto;
             overflow-x: hidden;
         }
@@ -233,11 +261,35 @@
             display: flex;
             justify-content: flex-end;
             gap: 10px;
+            flex-wrap: wrap;
         }
 
-        /* 預覽與 PDF 列印樣式 */
+        .conflict-box {
+            background: #fdfefe;
+            border: 1px solid #dcdde1;
+            padding: 14px;
+            border-radius: 6px;
+            margin: 12px 0;
+        }
+
+        .conflict-word-title {
+            font-size: 17px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .def-radio-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 0;
+            cursor: pointer;
+            border-bottom: 1px dashed #eee;
+        }
+
         .pdf-group-title {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
             color: #e74c3c;
             padding: 12px 0 6px 0;
@@ -245,23 +297,19 @@
             margin-bottom: 8px;
         }
 
-        .pdf-table {
+        .pdf-word-block {
             width: 100%;
             border-collapse: collapse;
-            table-layout: fixed;
-            margin-bottom: 12px;
+            border: 1px solid #000;
+            margin-bottom: 10px;
+            page-break-inside: avoid;
         }
 
-        .pdf-table th, .pdf-table td {
-            border: 1px solid #ddd;
+        .pdf-word-block td {
+            border: 1px solid #000;
             padding: 8px 10px;
-            text-align: left;
-            word-wrap: break-word;
-        }
-
-        .pdf-table th {
-            background-color: #f4f6f9;
-            font-weight: 600;
+            vertical-align: middle;
+            font-size: 14px;
         }
 
         .empty-tip {
@@ -278,8 +326,10 @@
             #wordInput, #posSelect, #defInput, .input-group .btn-primary { width: 100%; min-width: 0; }
             .action-bar { flex-direction: column; }
             .action-bar .btn { width: 100%; }
-            .word-content { gap: 4px; }
-            .word-text { font-size: 15px; }
+            .col-word { font-size: 16px; width: 30%; }
+            .col-pos { width: 35%; }
+            .col-def { width: 25%; }
+            .word-table td { padding: 6px 8px; font-size: 13px; }
         }
     </style>
 </head>
@@ -291,7 +341,7 @@
 
     <!-- 輸入區 -->
     <div class="input-group">
-        <input type="text" id="wordInput" placeholder="英文單字 (例: Apple)">
+        <input type="text" id="wordInput" placeholder="英文單字 (例: cautious / cautiously)">
         <select id="posSelect">
             <option value="n.">n. 名詞</option>
             <option value="v.">v. 動詞</option>
@@ -301,11 +351,11 @@
             <option value="conj.">conj. 連接詞</option>
             <option value="phr.">phr. 片語</option>
         </select>
-        <input type="text" id="defInput" placeholder="中文解釋 (例: 蘋果)">
-        <button class="btn btn-primary" onclick="addWord()">新增</button>
+        <input type="text" id="defInput" placeholder="中文解釋 (例: 謹慎 / 小心翼翼地)">
+        <button class="btn btn-primary" onclick="handleAddAction()">新增</button>
     </div>
 
-    <!-- 工具按鈕列（輸出按鈕已直接置於第一頁） -->
+    <!-- 工具按鈕列 -->
     <div class="action-bar">
         <button class="btn btn-secondary" onclick="autoGroupAndSort()">重新自動排列</button>
         <button class="btn btn-preview" onclick="openPreview()">預覽輸出</button>
@@ -314,6 +364,49 @@
 
     <!-- 按 A-Z 字母群組容器 -->
     <div id="groupedWordContainer"></div>
+</div>
+
+<!-- 1. 完全同名單字提示詢問視窗 -->
+<div id="conflictModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2 style="font-size: 18px; color: #e67e22;">該單字已存在，是否要新增？</h2>
+        </div>
+        <div class="modal-body">
+            <div class="conflict-word-title" id="conflictWordTitle"></div>
+            <p style="font-size: 14px; color: #555; margin-bottom: 6px;">目前已有之詞性與解釋：</p>
+            <div class="conflict-box" id="existingDefsList"></div>
+            <p style="font-size: 14px; color: #27ae60; font-weight: bold; margin-top: 10px;">
+                即將輸入的內容：<span id="newEntryPreview" style="color: #333; font-weight: normal;"></span>
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeConflictModal()">取消</button>
+            <button class="btn btn-warning" onclick="confirmCorrect()">更正</button>
+            <button class="btn btn-primary" onclick="confirmAddDuplicate()">新增</button>
+        </div>
+    </div>
+</div>
+
+<!-- 2. 變形/相近單字提示詢問視窗 -->
+<div id="variantModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2 style="font-size: 18px; color: #3498db;">該單字有相近的單字，是否新增至該單字列？</h2>
+        </div>
+        <div class="modal-body">
+            <div class="conflict-word-title" id="variantWordTitle"></div>
+            <p style="font-size: 14px; color: #555; margin-bottom: 6px;">該單字目前已有的詞性與解釋：</p>
+            <div class="conflict-box" id="variantDefsList"></div>
+            <p style="font-size: 14px; color: #2980b9; font-weight: bold; margin-top: 10px;">
+                欲新增之變形單字：<span id="variantNewPreview" style="color: #333; font-weight: normal;"></span>
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="confirmVariantExtra()">否，額外新增</button>
+            <button class="btn btn-primary" onclick="confirmVariantMerge()">是，新增至該單字</button>
+        </div>
+    </div>
 </div>
 
 <!-- 預覽視窗 -->
@@ -332,7 +425,7 @@
     </div>
 </div>
 
-<!-- 隱藏的 PDF 渲染專用容器 -->
+<!-- PDF 輸出專用隱藏容器 -->
 <div id="pdfExportContainer" style="display: none;"></div>
 
 <script>
@@ -375,7 +468,7 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             const swCode = `
-                const CACHE_NAME = 'vocab-cache-v5';
+                const CACHE_NAME = 'vocab-cache-v8';
                 const ASSETS = [
                     './',
                     './index.html',
@@ -410,7 +503,27 @@
         });
     }
 
-    let words = JSON.parse(localStorage.getItem("vocabularyList")) || [];
+    function normalizeData(rawData) {
+        if (!Array.isArray(rawData)) return [];
+        return rawData.map(item => {
+            if (item.senses && Array.isArray(item.senses)) {
+                return {
+                    word: item.word,
+                    senses: item.senses.map(s => ({
+                        pos: s.pos || '',
+                        def: s.def || '',
+                        form: s.form || ''
+                    }))
+                };
+            }
+            return {
+                word: item.word,
+                senses: [{ pos: item.pos || '', def: item.def || '', form: '' }]
+            };
+        });
+    }
+
+    let words = normalizeData(JSON.parse(localStorage.getItem("vocabularyList")) || []);
 
     function updateStatus(text, isError = false) {
         const status = document.getElementById("syncStatus");
@@ -430,7 +543,7 @@
             if (res.ok) {
                 updateStatus("雲端狀態：已同步完成");
             } else {
-                updateStatus("雲端狀態：同步失敗（請檢查 Firebase 權限規則）", true);
+                updateStatus("雲端狀態：同步失敗（請檢查 Firebase 權限）", true);
             }
         } catch (err) {
             updateStatus("雲端狀態：離線模式（已暫存本機）");
@@ -443,12 +556,11 @@
             const res = await fetch(DB_URL);
             if (res.ok) {
                 const data = await res.json();
-                if (Array.isArray(data)) {
-                    words = data;
-                } else if (data && typeof data === 'object') {
-                    words = Object.values(data);
-                } else if (data === null) {
-                    words = JSON.parse(localStorage.getItem("vocabularyList")) || [];
+                if (data) {
+                    const list = Array.isArray(data) ? data : Object.values(data);
+                    words = normalizeData(list);
+                } else {
+                    words = normalizeData(JSON.parse(localStorage.getItem("vocabularyList")) || []);
                 }
                 localStorage.setItem("vocabularyList", JSON.stringify(words));
                 updateStatus("雲端狀態：已連線並同步最新資料");
@@ -483,7 +595,51 @@
         renderList();
     }
 
-    function addWord() {
+    const COMMON_SUFFIXES = [
+        'ly', 'ness', 'tion', 'sion', 'able', 'ible', 'al', 'ive',
+        'ful', 'ic', 'ment', 'd', 'ed', 'ing', 'er', 'est', 's', 'es',
+        'ize', 'ise', 'ity', 'y'
+    ];
+
+    /* 判斷 target 是否為 base 之衍生變形詞 */
+    function isDerivativeOf(target, base) {
+        const t = target.toLowerCase();
+        const b = base.toLowerCase();
+        if (t === b || t.length <= b.length) return false;
+
+        for (const suffix of COMMON_SUFFIXES) {
+            if (t === b + suffix) return true;
+            if (b.endsWith('e') && t === b.slice(0, -1) + suffix) return true;
+            if (b.endsWith('y') && t === b.slice(0, -1) + 'i' + suffix) return true;
+        }
+        return false;
+    }
+
+    /* 判斷兩字是否互為變形衍生關係 */
+    function isWordVariant(w1, w2) {
+        const a = w1.toLowerCase();
+        const b = w2.toLowerCase();
+        if (a === b) return false;
+
+        if (isDerivativeOf(a, b) || isDerivativeOf(b, a)) return true;
+
+        const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a];
+        if (shorter.length >= 4) {
+            let commonLen = 0;
+            while (commonLen < shorter.length && shorter[commonLen] === longer[commonLen]) {
+                commonLen++;
+            }
+            if (commonLen >= shorter.length * 0.8 && (longer.length - commonLen) <= 4) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    let pendingEntry = null;
+    let pendingVariant = null;
+
+    function handleAddAction() {
         const wordInput = document.getElementById("wordInput");
         const posSelect = document.getElementById("posSelect");
         const defInput = document.getElementById("defInput");
@@ -497,14 +653,172 @@
             return;
         }
 
-        words.push({ word, pos, def });
+        // 1. 優先檢查是否為完全相同的單字（包含原單字或已有變形單字）
+        const exactIndex = words.findIndex(w => {
+            if (w.word.toLowerCase() === word.toLowerCase()) return true;
+            return w.senses.some(s => s.form && s.form.toLowerCase() === word.toLowerCase());
+        });
+
+        if (exactIndex !== -1) {
+            pendingEntry = { index: exactIndex, word, pos, def };
+            showConflictModal(words[exactIndex], pos, def);
+            return;
+        }
+
+        // 2. 次之檢查是否為已有單字的變形詞
+        const variantIndex = words.findIndex(w => isWordVariant(w.word, word));
+        if (variantIndex !== -1) {
+            pendingVariant = { targetIndex: variantIndex, word, pos, def };
+            showVariantModal(words[variantIndex], word, pos, def);
+            return;
+        }
+
+        // 3. 全新單字直接新增
+        words.push({
+            word: word,
+            senses: [{ pos, def, form: '' }]
+        });
         performSort();
         saveStorage();
         renderList();
+        resetInputs();
+    }
 
-        wordInput.value = "";
-        defInput.value = "";
-        wordInput.focus();
+    function resetInputs() {
+        document.getElementById("wordInput").value = "";
+        document.getElementById("defInput").value = "";
+        document.getElementById("wordInput").focus();
+        pendingEntry = null;
+        pendingVariant = null;
+    }
+
+    function showConflictModal(existingWordObj, newPos, newDef) {
+        document.getElementById("conflictWordTitle").textContent = `單字：${existingWordObj.word}`;
+        const container = document.getElementById("existingDefsList");
+        container.innerHTML = "";
+
+        existingWordObj.senses.forEach((sense, idx) => {
+            const label = document.createElement("label");
+            label.className = "def-radio-label";
+            const formText = sense.form ? `(${sense.form}) ` : '';
+            label.innerHTML = `
+                <input type="radio" name="replaceSenseIndex" value="${idx}" ${idx === 0 ? 'checked' : ''}>
+                <span><strong>${sense.pos} ${formText}</strong>${sense.def}</span>
+            `;
+            container.appendChild(label);
+        });
+
+        document.getElementById("newEntryPreview").textContent = `${newPos} ${newDef}`;
+        document.getElementById("conflictModal").style.display = "flex";
+    }
+
+    function closeConflictModal() {
+        document.getElementById("conflictModal").style.display = "none";
+        pendingEntry = null;
+    }
+
+    function confirmCorrect() {
+        if (!pendingEntry) return;
+        const selectedRadio = document.querySelector('input[name="replaceSenseIndex"]:checked');
+        const replaceIdx = selectedRadio ? parseInt(selectedRadio.value, 10) : 0;
+
+        const targetSense = words[pendingEntry.index].senses[replaceIdx];
+        targetSense.pos = pendingEntry.pos;
+        targetSense.def = pendingEntry.def;
+
+        closeConflictModal();
+        performSort();
+        saveStorage();
+        renderList();
+        resetInputs();
+    }
+
+    function confirmAddDuplicate() {
+        if (!pendingEntry) return;
+        const mainWord = words[pendingEntry.index];
+        const isDiffForm = pendingEntry.word.toLowerCase() !== mainWord.word.toLowerCase();
+
+        mainWord.senses.push({
+            pos: pendingEntry.pos,
+            def: pendingEntry.def,
+            form: isDiffForm ? pendingEntry.word : ''
+        });
+
+        closeConflictModal();
+        performSort();
+        saveStorage();
+        renderList();
+        resetInputs();
+    }
+
+    function showVariantModal(existingWordObj, newWord, newPos, newDef) {
+        document.getElementById("variantWordTitle").textContent = `相近的既有單字：${existingWordObj.word}`;
+        const container = document.getElementById("variantDefsList");
+        container.innerHTML = "";
+
+        existingWordObj.senses.forEach((sense) => {
+            const div = document.createElement("div");
+            div.style.padding = "4px 0";
+            const formText = sense.form ? `(${sense.form}) ` : '';
+            div.innerHTML = `• <strong>${sense.pos} ${formText}</strong>${sense.def}`;
+            container.appendChild(div);
+        });
+
+        document.getElementById("variantNewPreview").textContent = `${newWord} [${newPos} ${newDef}]`;
+        document.getElementById("variantModal").style.display = "flex";
+    }
+
+    function closeVariantModal() {
+        document.getElementById("variantModal").style.display = "none";
+        pendingVariant = null;
+    }
+
+    // 選項 1：是，新增至該單字（加入原形偵測與最前方主單字替換機制）
+    function confirmVariantMerge() {
+        if (!pendingVariant) return;
+        const targetWordObj = words[pendingVariant.targetIndex];
+        const oldWord = targetWordObj.word;
+        const newWord = pendingVariant.word;
+
+        // 若原第一項尚未標記 form，補上原本記錄的單字形體
+        if (targetWordObj.senses.length > 0 && !targetWordObj.senses[0].form) {
+            targetWordObj.senses[0].form = oldWord;
+        }
+
+        // 新增本次輸入的詞性與解釋
+        targetWordObj.senses.push({
+            pos: pendingVariant.pos,
+            def: pendingVariant.def,
+            form: newWord
+        });
+
+        // 原形判定：若舊字為新字的衍生變形（代表新字是原形），則將主標題換成新字
+        if (isDerivativeOf(oldWord, newWord)) {
+            targetWordObj.word = newWord;
+        }
+        // 若新字為舊字的衍生變形，則舊字本身即為原形，維持舊字
+        // 若兩者皆為變形（非原形），則維持原有主字不变
+
+        closeVariantModal();
+        performSort();
+        saveStorage();
+        renderList();
+        resetInputs();
+    }
+
+    // 選項 2：否，額外新增獨立單字
+    function confirmVariantExtra() {
+        if (!pendingVariant) return;
+        words.push({
+            word: pendingVariant.word,
+            senses: [{ pos: pendingVariant.pos, def: pendingVariant.def, form: '' }]
+        });
+
+        closeVariantModal();
+        performSort();
+        saveStorage();
+        renderList();
+        resetInputs();
     }
 
     let isComposing = false;
@@ -515,7 +829,7 @@
         if (e.isComposing || isComposing || e.keyCode === 229) return;
         if (e.key === "Enter") {
             e.preventDefault();
-            addWord();
+            handleAddAction();
         }
     }
 
@@ -527,13 +841,12 @@
         input.addEventListener("keydown", handleKeyDown);
     });
 
-    function deleteWord(originalIndex) {
+    function deleteWordGroup(originalIndex) {
         words.splice(originalIndex, 1);
         saveStorage();
         renderList();
     }
 
-    // 將單字依照開頭字母 A-Z 分組（非英文字母歸入 #）
     function getGroupedWords() {
         const groups = {};
         words.forEach((item, index) => {
@@ -545,6 +858,13 @@
             groups[letter].push({ ...item, originalIndex: index });
         });
         return groups;
+    }
+
+    function formatPosColumn(sense) {
+        if (sense.form && sense.form.trim() !== '') {
+            return `${sense.pos}（ ${sense.form} ）`;
+        }
+        return sense.pos;
     }
 
     function renderList() {
@@ -577,18 +897,41 @@
 
             groups[letter].forEach((item) => {
                 const li = document.createElement("li");
-                li.className = "word-item";
+                li.className = "word-card-item";
                 li.draggable = true;
                 li.dataset.index = item.originalIndex;
 
+                const rowSpan = item.senses.length;
+                let rowsHtml = '';
+
+                item.senses.forEach((sense, sIdx) => {
+                    const posText = formatPosColumn(sense);
+                    if (sIdx === 0) {
+                        rowsHtml += `
+                            <tr>
+                                <td class="col-word" rowspan="${rowSpan}">${item.word}</td>
+                                <td class="col-pos">${posText}</td>
+                                <td class="col-def">${sense.def}</td>
+                                <td class="col-ops" rowspan="${rowSpan}">
+                                    <button class="delete-btn" onclick="deleteWordGroup(${item.originalIndex})">刪除</button>
+                                </td>
+                            </tr>
+                        `;
+                    } else {
+                        rowsHtml += `
+                            <tr>
+                                <td class="col-pos">${posText}</td>
+                                <td class="col-def">${sense.def}</td>
+                            </tr>
+                        `;
+                    }
+                });
+
                 li.innerHTML = `
-                    <div class="word-content">
-                        <span class="drag-handle">☰</span>
-                        <span class="word-text">${item.word}</span>
-                        <span class="part-of-speech">${item.pos}</span>
-                        <span class="definition">${item.def}</span>
-                    </div>
-                    <button class="delete-btn" onclick="deleteWord(${item.originalIndex})">刪除</button>
+                    <div class="drag-bar">☰</div>
+                    <table class="word-table">
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
                 `;
 
                 li.addEventListener("dragstart", handleDragStart);
@@ -633,7 +976,6 @@
         draggedItemIndex = null;
     }
 
-    // 產生預覽與 PDF 共用的表格結構
     function buildGroupedTableHTML() {
         if (words.length === 0) {
             return '<div style="text-align:center; padding:20px; color:#999;">無單字資料</div>';
@@ -649,29 +991,30 @@
         let html = '';
         sortedLetters.forEach((letter) => {
             html += `<div class="pdf-group-title">${letter}</div>`;
-            html += `
-                <table class="pdf-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 12%;">#</th>
-                            <th style="width: 33%;">單字</th>
-                            <th style="width: 18%;">詞性</th>
-                            <th style="width: 37%;">解釋</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-            groups[letter].forEach((item, idx) => {
-                html += `
-                    <tr>
-                        <td>${idx + 1}</td>
-                        <td style="font-weight:600;">${item.word}</td>
-                        <td>${item.pos}</td>
-                        <td>${item.def}</td>
-                    </tr>
-                `;
+            groups[letter].forEach((item) => {
+                const rowSpan = item.senses.length;
+                let rowsHtml = '';
+                item.senses.forEach((sense, sIdx) => {
+                    const posText = formatPosColumn(sense);
+                    if (sIdx === 0) {
+                        rowsHtml += `
+                            <tr>
+                                <td style="width: 32%; font-weight: 600; font-size: 16px;" rowspan="${rowSpan}">${item.word}</td>
+                                <td style="width: 28%; font-weight: 500;">${posText}</td>
+                                <td style="width: 40%;">${sense.def}</td>
+                            </tr>
+                        `;
+                    } else {
+                        rowsHtml += `
+                            <tr>
+                                <td style="font-weight: 500;">${posText}</td>
+                                <td>${sense.def}</td>
+                            </tr>
+                        `;
+                    }
+                });
+                html += `<table class="pdf-word-block"><tbody>${rowsHtml}</tbody></table>`;
             });
-            html += `</tbody></table>`;
         });
         return html;
     }
@@ -686,7 +1029,6 @@
         document.getElementById("previewModal").style.display = "none";
     }
 
-    // 第一頁直接觸發 PDF 輸出
     function exportPDF() {
         if (words.length === 0) {
             alert("目前沒有單字可供輸出成 PDF！");
