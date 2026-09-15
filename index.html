@@ -14,7 +14,7 @@
 
     <link rel="icon" id="dynamic-favicon" type="image/png" href="icon_English.png">
 
-    <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22%E5%A4%A7%E6%B5%B7%E7%9A%84%E5%AD%B8%E6%88%90%E8%8B%B1%E6%96%87%E5%96%AE%E5%AD%97%E5%BA%AB%22%2C%22short_name%22%3A%22%E5%A4%A7%E6%B5%B7%E7%9A%84%E5%AD%B8%E6%88%90%E8%8B%B1%E6%96%87%E5%96%AE%E5%AD%97%E5%BA%AB%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f4f6f9%22%2C%22theme_color%22%3A%22%233498db%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22icon_English.png%22%2C%22sizes%22%3A%22192x192%20512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
+    <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22%E5%A4%A7%E6%B5%B7%E7%9A%84%E5%AD%B8%E6%88%90%E8%8B%B1%E6%96%87%E5%96%AE%E5%AD%97%E5%BA%AB%22%2C%22short_name%22%3A%22%E5%A4%A7%E6%B5%B7%E7%9A%84%E5%AD%B8%E6%88%90%E8%8B%B1%E6%96%87%E5%96%AE%E5%BA%AB%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f4f6f9%22%2C%22theme_color%22%3A%22%233498db%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22icon_English.png%22%2C%22sizes%22%3A%22192x192%20512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
@@ -371,7 +371,7 @@
         .delete-btn:hover { background-color: #e74c3c; color: #fff; }
 
         /* 彈窗樣式 */
-        #conflictModal, #variantModal, #previewModal, #historyModal, #addToExistingModal, #editSenseModal {
+        #conflictModal, #variantModal, #previewModal, #historyModal, #addToExistingModal, #editSenseModal, #searchDidYouMeanModal {
             display: none;
             position: fixed;
             top: 0; left: 0;
@@ -506,6 +506,8 @@
             padding: 12px 0 6px 0;
             border-bottom: 2px solid #e74c3c;
             margin-bottom: 8px;
+            page-break-inside: avoid;
+            break-inside: avoid;
         }
 
         .pdf-word-block {
@@ -514,6 +516,7 @@
             border: 1px solid #000;
             margin-bottom: 10px;
             page-break-inside: avoid;
+            break-inside: avoid;
         }
 
         .pdf-word-block td {
@@ -691,6 +694,21 @@
     </div>
 </div>
 
+<div id="searchDidYouMeanModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2 style="font-size: 18px; color: #e67e22;">找不到此單字，您是指以下單字嗎？</h2>
+        </div>
+        <div class="modal-body">
+            <p style="font-size: 14px; color: #555; margin-bottom: 8px;">您搜尋的單字「<strong id="didYouMeanQuery"></strong>」不在單字庫中。</p>
+            <div class="conflict-box" id="didYouMeanList" style="max-height: 240px; overflow-y: auto;"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeDidYouMeanModal()">取消</button>
+        </div>
+    </div>
+</div>
+
 <div id="editSenseModal">
     <div class="modal-card">
         <div class="modal-header">
@@ -786,7 +804,7 @@
             document.getElementById("loginOverlay").style.display = "none";
             document.getElementById("currentUsername").textContent = currentUser;
         } else {
-            alert("使用者名稱錯誤，請重新輸入！");
+            alert("使用者名稱錯誤請重新輸入！");
             document.getElementById("usernameInput").value = "";
             document.getElementById("usernameInput").focus();
         }
@@ -1483,6 +1501,10 @@
         }
     });
 
+    function closeDidYouMeanModal() {
+        document.getElementById("searchDidYouMeanModal").style.display = "none";
+    }
+
     function handleSearch() {
         const searchInput = document.getElementById("searchInput");
         const query = searchInput.value.trim().toLowerCase();
@@ -1501,7 +1523,40 @@
         });
 
         if (matchedIndex === -1) {
-            alert("很抱歉，單字庫裡並無此單字！");
+            // 尋找相似拼音或字母組成的字
+            const similarWords = words.filter(w => {
+                if (isWordVariant(w.word, query)) return true;
+                if (Math.abs(w.word.length - query.length) <= 2) {
+                    let common = 0;
+                    const minLen = Math.min(w.word.length, query.length);
+                    for (let i = 0; i < minLen; i++) {
+                        if (w.word[i] === query[i]) common++;
+                    }
+                    if (common >= minLen * 0.5) return true;
+                }
+                return false;
+            });
+
+            if (similarWords.length > 0) {
+                document.getElementById("didYouMeanQuery").textContent = query;
+                const container = document.getElementById("didYouMeanList");
+                container.innerHTML = "";
+                similarWords.forEach(sw => {
+                    const label = document.createElement("label");
+                    label.className = "def-radio-label";
+                    const summary = sw.senses.map(s => `${s.pos} ${s.def}`).join('；');
+                    label.innerHTML = `
+                        <span style="cursor: pointer; width: 100%; display: block;" onclick="selectDidYouMeanWord('${sw.word}')">
+                            <strong>${sw.word}</strong> <small style="color:#7f8c8d;">(${summary})</small>
+                        </span>
+                    `;
+                    container.appendChild(label);
+                });
+                document.getElementById("searchDidYouMeanModal").style.display = "flex";
+            } else {
+                alert("很抱歉，單字庫裡並無此單字！");
+            }
+
             searchInput.value = "";
             return;
         }
@@ -1516,6 +1571,13 @@
         }
 
         searchInput.value = "";
+    }
+
+    function selectDidYouMeanWord(word) {
+        closeDidYouMeanModal();
+        const searchInput = document.getElementById("searchInput");
+        searchInput.value = word;
+        handleSearch();
     }
 
     let isComposing = false;
@@ -1970,14 +2032,25 @@
         exportContainer.style.display = "block";
 
         const opt = {
-            margin:       10,
+            margin:       [10, 10, 15, 10],
             filename:     '大海的學測英文單字庫.pdf',
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2 },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
-        html2pdf().set(opt).from(exportContainer).save().then(() => {
+        html2pdf().set(opt).from(exportContainer).toPdf().get('pdf').then(function (pdf) {
+            const totalPages = pdf.internal.getNumberOfPages();
+            for (let i = 1; i <= totalPages; i++) {
+                pdf.setPage(i);
+                pdf.setFontSize(10);
+                pdf.setTextColor(100, 100, 100);
+                const pageText = `第 ${i} 頁 / 共 ${totalPages} 頁`;
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+                pdf.text(pageText, pageWidth / 2, pageHeight - 8, { align: 'center' });
+            }
+        }).save().then(() => {
             exportContainer.style.display = "none";
             exportContainer.innerHTML = "";
         });
