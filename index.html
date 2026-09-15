@@ -169,6 +169,7 @@
             gap: 10px;
             margin-bottom: 16px;
             align-items: center;
+            position: relative;
         }
 
         #searchInput {
@@ -178,6 +179,38 @@
             border: 1px solid #3498db;
             border-radius: 6px;
             outline: none;
+        }
+
+        /* 即時搜尋下拉選單樣式 */
+        #liveSearchDropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #fff;
+            border: 1px solid #3498db;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            max-height: 220px;
+            overflow-y: auto;
+            z-index: 99;
+            margin-top: 4px;
+        }
+
+        .live-search-item {
+            padding: 10px 12px;
+            font-size: 14px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+
+        .live-search-item:last-child {
+            border-bottom: none;
+        }
+
+        .live-search-item:hover {
+            background-color: #ebf5fb;
         }
 
         .btn {
@@ -576,7 +609,9 @@
             autocorrect="off"
             spellcheck="false"
             enterkeyhint="search"
+            oninput="renderLiveSearchDropdown()"
         >
+        <div id="liveSearchDropdown"></div>
         <button class="btn btn-info" onclick="handleSearch()">搜尋</button>
     </div>
 
@@ -1405,9 +1440,53 @@
         alert("修改已儲存完成！");
     }
 
+    function renderLiveSearchDropdown() {
+        const filter = document.getElementById("searchInput").value.trim().toLowerCase();
+        const dropdown = document.getElementById("liveSearchDropdown");
+        dropdown.innerHTML = "";
+
+        if (!filter) {
+            dropdown.style.display = "none";
+            return;
+        }
+
+        const filtered = words.map((w, idx) => ({ ...w, originalIdx: idx })).filter(w => {
+            if (w.word.toLowerCase().includes(filter)) return true;
+            return w.senses.some(s => (s.form && s.form.toLowerCase().includes(filter)) || s.def.includes(filter));
+        });
+
+        if (filtered.length === 0) {
+            dropdown.style.display = "none";
+            return;
+        }
+
+        filtered.forEach(w => {
+            const div = document.createElement("div");
+            div.className = "live-search-item";
+            const summary = w.senses.map(s => `${s.pos} ${s.def}`).join('；');
+            div.innerHTML = `<strong>${w.word}</strong> <small style="color:#7f8c8d;">(${summary})</small>`;
+            div.onclick = () => {
+                document.getElementById("searchInput").value = w.word;
+                dropdown.style.display = "none";
+                handleSearch();
+            };
+            dropdown.appendChild(div);
+        });
+
+        dropdown.style.display = "block";
+    }
+
+    document.addEventListener("click", (e) => {
+        const searchGroup = document.querySelector(".search-group");
+        if (!searchGroup.contains(e.target)) {
+            document.getElementById("liveSearchDropdown").style.display = "none";
+        }
+    });
+
     function handleSearch() {
         const searchInput = document.getElementById("searchInput");
         const query = searchInput.value.trim().toLowerCase();
+        document.getElementById("liveSearchDropdown").style.display = "none";
 
         document.querySelectorAll(".word-card-item").forEach(el => el.classList.remove("highlight"));
 
@@ -1423,6 +1502,7 @@
 
         if (matchedIndex === -1) {
             alert("很抱歉，單字庫裡並無此單字！");
+            searchInput.value = "";
             return;
         }
 
@@ -1434,6 +1514,8 @@
                 targetElement.classList.remove("highlight");
             }, 3000);
         }
+
+        searchInput.value = "";
     }
 
     let isComposing = false;
