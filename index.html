@@ -102,7 +102,13 @@
             color: #2980b9;
         }
 
-        .logout-btn {
+        .user-bar-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .refresh-btn {
             background: none;
             border: 1px solid #2980b9;
             color: #2980b9;
@@ -110,6 +116,24 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 12px;
+        }
+        .refresh-btn:hover {
+            background-color: #2980b9;
+            color: #fff;
+        }
+
+        .logout-btn {
+            background: none;
+            border: 1px solid #e74c3c;
+            color: #e74c3c;
+            padding: 2px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .logout-btn:hover {
+            background-color: #e74c3c;
+            color: #fff;
         }
 
         .container {
@@ -587,7 +611,10 @@
 <div class="container">
     <div class="user-bar">
         <span>目前使用者：<strong id="currentUsername"></strong></span>
-        <button class="logout-btn" onclick="handleLogout()">登出</button>
+        <div class="user-bar-actions">
+            <button class="refresh-btn" onclick="loadFromFirebase()">🔄 重整</button>
+            <button class="logout-btn" onclick="handleLogout()">登出</button>
+        </div>
     </div>
 
     <h1>大海的學測英文單字庫</h1>
@@ -2061,7 +2088,7 @@
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2, useCORS: true },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak:    { mode: 'avoid-all', before: '.pdf-item-wrapper' } // <--- 改用 avoid-all 模式以徹底防止圖片被切斷
+            pagebreak:    { mode: 'avoid-all', before: '.pdf-item-wrapper' }
         };
 
         html2pdf().set(opt).from(exportContainer).save().then(() => {
