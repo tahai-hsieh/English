@@ -530,7 +530,6 @@
             page-break-inside: avoid !important;
             break-inside: avoid !important;
             margin-bottom: 10px;
-            display: block;
         }
 
         .pdf-group-title {
@@ -544,7 +543,6 @@
             break-inside: avoid !important;
             page-break-after: avoid !important;
             break-after: avoid !important;
-            display: block;
         }
 
         .pdf-word-block {
@@ -2088,7 +2086,7 @@
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2, useCORS: true },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak:    { mode: 'avoid-all', before: '.pdf-item-wrapper' }
+            pagebreak:    { mode: ['css', 'legacy'], avoid: ['.pdf-item-wrapper', '.pdf-group-title', '.pdf-word-block'] }
         };
 
         html2pdf().set(opt).from(exportContainer).save().then(() => {
