@@ -14,7 +14,7 @@
 
     <link rel="icon" id="dynamic-favicon" type="image/png" href="icon_English.png">
 
-    <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22%E5%A4%A7%E6%B5%B7%E7%9A%84%E5%AD%B8%E6%88%90%E8%8B%B1%E6%96%87%E5%96%AE%E5%AD%97%E5%BA%AB%22%2C%22short_name%22%3A%22%E5%A4%A7%E6%B5%B7%E7%9A%84%E5%AD%B8%E6%88%90%E8%8B%B1%E6%96%87%E5%96%AE%E5%BA%AB%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f4f6f9%22%2C%22theme_color%22%3A%22%233498db%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22icon_English.png%22%2C%22sizes%22%3A%22192x192%20512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
+    <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22%E5%A4%A7%E6%B5%B7%E7%9A%84%E5%AD%B8%E6%88%90%E8%8B%B1%E6%96%87%E5%96%AE%E5%AD%97%E5%BA%AB%22%2C%22short_name%22%3A%22%E5%A4%A7%E6%B5%B7%E7%9A%84%E5%AD%B8%E6%88%90%E8%8B%B1%E6%96%87%E5%96%AE%E5%AD%97%E5%BA%AB%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f4f6f9%22%2C%22theme_color%22%3A%22%233498db%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22icon_English.png%22%2C%22sizes%22%3A%22192x192%20512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
@@ -524,6 +524,13 @@
             padding: 8px 10px;
             vertical-align: middle;
             font-size: 14px;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        .pdf-word-block tr {
+            page-break-inside: avoid;
+            break-inside: avoid;
         }
 
         .empty-tip {
@@ -804,7 +811,7 @@
             document.getElementById("loginOverlay").style.display = "none";
             document.getElementById("currentUsername").textContent = currentUser;
         } else {
-            alert("使用者名稱錯誤請重新輸入！");
+            alert("使用者名稱錯誤，請重新輸入！");
             document.getElementById("usernameInput").value = "";
             document.getElementById("usernameInput").focus();
         }
@@ -2032,25 +2039,14 @@
         exportContainer.style.display = "block";
 
         const opt = {
-            margin:       [10, 10, 15, 10],
+            margin:       10,
             filename:     '大海的學測英文單字庫.pdf',
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2 },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
-        html2pdf().set(opt).from(exportContainer).toPdf().get('pdf').then(function (pdf) {
-            const totalPages = pdf.internal.getNumberOfPages();
-            for (let i = 1; i <= totalPages; i++) {
-                pdf.setPage(i);
-                pdf.setFontSize(10);
-                pdf.setTextColor(100, 100, 100);
-                const pageText = `第 ${i} 頁 / 共 ${totalPages} 頁`;
-                const pageWidth = pdf.internal.pageSize.getWidth();
-                const pageHeight = pdf.internal.pageSize.getHeight();
-                pdf.text(pageText, pageWidth / 2, pageHeight - 8, { align: 'center' });
-            }
-        }).save().then(() => {
+        html2pdf().set(opt).from(exportContainer).save().then(() => {
             exportContainer.style.display = "none";
             exportContainer.innerHTML = "";
         });
